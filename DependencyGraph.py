@@ -24,7 +24,22 @@ class DependencyGraph:
                 self.allFiles.append(os.path.join(root, name))
 
     def __match(self, line):
-        return re.search("require" + "\('[^']*'\)\\n", line)
+        return re.search("require" + "\('[^']*'\);*\\n", line)
+
+    def normalize_paths(self, path, file):
+
+        # check if import is a system/third party package
+        if path[0] != '.':
+            return path
+        # otherwise get the path
+        else:
+            # get file directory path (for path normalization)
+            file_dir = os.path.dirname(file)
+            abs_path = os.path.join(file_dir, path)
+            # normalize path with respect to importing file
+            norm_path = os.path.normpath(abs_path)
+            final_path = os.path.relpath(norm_path, self.path)
+            return final_path
 
     def getImports(self):
         for file in self.allFiles:
@@ -35,26 +50,34 @@ class DependencyGraph:
 
                 result = self.__match(line)
                 if result:
-
-                    relative_path = result.group()[9:-3]
-                    if relative_path[0] != '.':
-                        imports.append(relative_path)
-                    else:
-                        abs_path = os.path.join(self.path, relative_path)
-                        final_path = os.path.normpath(abs_path)
-                        # trim require and parentheses and add import name to this files imports
-                        imports.append(final_path)
+                    value = result.group()[:-1]
+                    # using ; char to terminate statements is optional in js
+                    if value[-1:] == ';':
+                        value = value[:-1]
+                        print(value)
+                    # get import name by cutting away require keyword
+                    import_name = value[9:-2]
+                    final_path = self.normalize_paths(import_name, file)
+                    # trim require and parentheses and add import name to this files imports
+                    imports.append(final_path)
             # create key value pair with file path as key and imports array as value
-            new = Node(file, imports)
+            new = Node(os.path.relpath(file, self.path), imports)
             self.nodes.append(new)
 
-
     def buildGraph(self):
+        # keep track of which nodes have been created
+        added_nodes = {}
         dot = graphviz.Digraph(graph_attr={'rankdir':'LR'})
         for node in self.nodes:
-            dot.node(node.name)
+            node.name = node.name[:-3]
+            if node.name not in added_nodes:
+                dot.node(node.name)
+                added_nodes[node.name] = "added"
             for w in node.adjacency_list:
-                dot.edge(node.name, w)
+                if w not in added_nodes:
+                    dot.node(node.name)
+                    added_nodes[w] = "added"
+                dot.edge(w, node.name)
         # print(dot.source)
         dot.render('doctest-output/round-table.gv').replace('\\', '/')
 

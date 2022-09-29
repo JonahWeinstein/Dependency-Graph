@@ -1,0 +1,96 @@
+digraph {
+	graph [rankdir=LR]
+	"routers/user_router"
+	"routers/user_router"
+	express -> "routers/user_router"
+	"routers/user_router"
+	passport -> "routers/user_router"
+	"routers/user_router"
+	sequelize -> "routers/user_router"
+	"routers/product_router"
+	express -> "routers/product_router"
+	sequelize -> "routers/product_router"
+	"routers/product_router"
+	"middleware/requireLogin" -> "routers/product_router"
+	"routers/store_router"
+	express -> "routers/store_router"
+	sequelize -> "routers/store_router"
+	"middleware/requireLogin" -> "routers/store_router"
+	"routers/image_router"
+	express -> "routers/image_router"
+	"routers/image_router"
+	multer -> "routers/image_router"
+	"routers/image_router"
+	sharp -> "routers/image_router"
+	sequelize -> "routers/image_router"
+	"middleware/requireLogin" -> "routers/image_router"
+	"routers/cart_router"
+	express -> "routers/cart_router"
+	sequelize -> "routers/cart_router"
+	"routers/cart_router"
+	"utils/updateCartQuantity" -> "routers/cart_router"
+	"tests/factories/userFactory"
+	sequelize -> "tests/factories/userFactory"
+	"tests/factories/userFactory"
+	"tests/fixtures" -> "tests/factories/userFactory"
+	"tests/factories/sessionFactory"
+	"tests/factories/sessionFactory"
+	keygrip -> "tests/factories/sessionFactory"
+	"tests/helpers/page"
+	"tests/factories/sessionFactory" -> "tests/helpers/page"
+	"tests/factories/userFactory" -> "tests/helpers/page"
+	"tests/products.test"
+	"tests/products.test"
+	puppeteer -> "tests/products.test"
+	"tests/fixtures" -> "tests/products.test"
+	"tests/helpers/page" -> "tests/products.test"
+	"tests/setup"
+	sequelize -> "tests/setup"
+	"tests/fixtures" -> "tests/setup"
+	"tests/stores.test"
+	puppeteer -> "tests/stores.test"
+	"tests/helpers/page" -> "tests/stores.test"
+	"tests/login.test"
+	puppeteer -> "tests/login.test"
+	"utils/updateCartQuantity"
+	"models/cart" -> "utils/updateCartQuantity"
+	"models/user"
+	"models/user"
+	validator -> "models/user"
+	"models/user"
+	bcryptjs -> "models/user"
+	"models/store"
+	"models/image"
+	"models/product"
+	"services/passport-local"
+	passport -> "services/passport-local"
+	sequelize -> "services/passport-local"
+	"services/passport-google"
+	passport -> "services/passport-google"
+	sequelize -> "services/passport-google"
+	index
+	index
+	app -> index
+	sequelize
+	path -> sequelize
+	sequelize
+	fs -> sequelize
+	sequelize -> sequelize
+	express -> app
+	app
+	cors -> app
+	app
+	"cookie-parser" -> app
+	passport -> app
+	app
+	"cookie-session" -> app
+	app
+	"body-parser" -> app
+	"routers/product_router" -> app
+	"routers/cart_router" -> app
+	"routers/user_router" -> app
+	"routers/store_router" -> app
+	"routers/image_router" -> app
+	"services/passport-local" -> app
+	"services/passport-google" -> app
+}
