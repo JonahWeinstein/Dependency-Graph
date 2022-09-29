@@ -1,5 +1,6 @@
 import os
 import re
+
 import graphviz
 
 
@@ -11,20 +12,45 @@ class Node:
 
 # creates dependency graph for given project file, currently only supports nodejs projects using
 # commonJS imports
+
 class DependencyGraph:
-    def __init__(self, directory_path):
+    # directoy path is abs path to root of you project, ignore is an array of relative paths (from directory path)
+    # of directories that should not be graphed, such as node_modules
+    def __init__(self, directory_path, ignore, import_format='commonJS'):
+
         self.path = directory_path
         self.allFiles = []
         self.nodes = []
+        self.import_format = import_format
+        self.ignore = ignore
+
+    def check_ignore(self, path):
+
+        for ignore in self.ignore:
+            if os.path.join(self.path, ignore) in path:
+                return True
+        return False
 
     def readDirectory(self):
         # look through all files recursively and add their absolute path to all Files array
         for root, dirs, files in os.walk(self.path, topdown=False):
+
             for name in files:
-                self.allFiles.append(os.path.join(root, name))
+                # check if this file is in a directory to ignore
+                file_path = os.path.join(root, name)
+                ignore = self.check_ignore(file_path)
+                if not ignore and os.path.splitext(file_path)[1] == '.js':
+                    self.allFiles.append(os.path.join(root, name))
+
+
+
 
     def __match(self, line):
-        return re.search("require" + "\('[^']*'\);*\\n", line)
+        if self.import_format == 'ES6':
+            return 5
+        else:
+            return re.search("require" + "\('[^']*'\);*\\n", line)
+
 
     def normalize_paths(self, path, file):
 
@@ -38,6 +64,7 @@ class DependencyGraph:
             abs_path = os.path.join(file_dir, path)
             # normalize path with respect to importing file
             norm_path = os.path.normpath(abs_path)
+            # get path relative to project root
             final_path = os.path.relpath(norm_path, self.path)
             return final_path
 
@@ -50,14 +77,15 @@ class DependencyGraph:
 
                 result = self.__match(line)
                 if result:
+                    # get rid of newline
                     value = result.group()[:-1]
                     # using ; char to terminate statements is optional in js
                     if value[-1:] == ';':
                         value = value[:-1]
-                        print(value)
-                    # get import name by cutting away require keyword
+                    # get import name by cutting away require keyword and parentheses/single quotes
                     import_name = value[9:-2]
                     final_path = self.normalize_paths(import_name, file)
+
                     # trim require and parentheses and add import name to this files imports
                     imports.append(final_path)
             # create key value pair with file path as key and imports array as value
@@ -69,6 +97,7 @@ class DependencyGraph:
         added_nodes = {}
         dot = graphviz.Digraph(graph_attr={'rankdir':'LR'})
         for node in self.nodes:
+            # remove file extension since it won't be in import statements
             node.name = node.name[:-3]
             if node.name not in added_nodes:
                 dot.node(node.name)
