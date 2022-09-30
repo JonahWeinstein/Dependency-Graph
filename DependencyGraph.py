@@ -14,14 +14,13 @@ class Node:
 # commonJS imports
 
 class DependencyGraph:
-    # directoy path is abs path to root of you project, ignore is an array of relative paths (from directory path)
+    # directory path is abs path to root of you project, ignore is an array of relative paths (from directory path)
     # of directories that should not be graphed, such as node_modules
-    def __init__(self, directory_path, ignore, import_format='commonJS'):
+    def __init__(self, directory_path, ignore = []):
 
         self.path = directory_path
         self.allFiles = []
         self.nodes = []
-        self.import_format = import_format
         self.ignore = ignore
 
     def check_ignore(self, path):
@@ -46,22 +45,45 @@ class DependencyGraph:
 
 
     def __match(self, line):
-        if self.import_format == 'ES6':
-            return 5
+        if line[:2] == '//':
+            return
+        # look for commonJS require statements
+        match = re.search("require" + "\('[^']*'\);*\\n", line)
+        # extract name of imported file from match
+        if match:
+            value = match.group()[:-1]
+            # using ; char to terminate statements is optional in js
+            if value[-1:] == ';':
+                value = value[:-1]
+            # get import name by cutting away require keyword and parentheses/single quotes
+            return value[9:-2]
+
+        # look for ES6 import statements
         else:
-            return re.search("require" + "\('[^']*'\);*\\n", line)
+            match = re.search("import" + ".*", line)
+            # extract name of imported file from match
+            if match:
+                value = match.group()
+                # search for content between single or double quotes
+                name = re.search('(?:\'|\").*(?:\'|\")', value)
+                if name:
+                    return name.group().strip('\"\'')
+        return match
 
 
     def normalize_paths(self, path, file):
-
+        print(path)
         # check if import is a system/third party package
         if path[0] != '.':
             return path
         # otherwise get the path
         else:
             # get file directory path (for path normalization)
+
             file_dir = os.path.dirname(file)
+
             abs_path = os.path.join(file_dir, path)
+
             # normalize path with respect to importing file
             norm_path = os.path.normpath(abs_path)
             # get path relative to project root
@@ -78,13 +100,8 @@ class DependencyGraph:
                 result = self.__match(line)
                 if result:
                     # get rid of newline
-                    value = result.group()[:-1]
-                    # using ; char to terminate statements is optional in js
-                    if value[-1:] == ';':
-                        value = value[:-1]
-                    # get import name by cutting away require keyword and parentheses/single quotes
-                    import_name = value[9:-2]
-                    final_path = self.normalize_paths(import_name, file)
+
+                    final_path = self.normalize_paths(result, file)
 
                     # trim require and parentheses and add import name to this files imports
                     imports.append(final_path)
